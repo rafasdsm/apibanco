@@ -4,6 +4,7 @@ class Dbcontroller:
     def __init__(self):
         self.db = self.connect()
         # O cursor é aberto na conexão inicial
+        
     def open_text(self):
         data = {}
         with open("banco.txt",'r') as file:
