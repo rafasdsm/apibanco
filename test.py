@@ -23,3 +23,5 @@ def gerar_clientes_tabela(quant:int):
     dados = gerar_clientes(quant)
     for c in dados:db.inserir_tabela(tabela,c)
     return print("Dados inseridos com sucesso!")
+
+

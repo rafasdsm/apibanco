@@ -1,9 +1,8 @@
-import mysql.connector
+from mssql_python import connect
 
 class Dbcontroller:
     def __init__(self):
         self.db = self.connect()
-        # O cursor é aberto na conexão inicial
 
     def open_text(self):
         data = {}
@@ -17,26 +16,30 @@ class Dbcontroller:
     def connect(self):
         try:
             data = self.open_text()
-            db = self.db = mysql.connector.connect(
-                    host="localhost",
-                    user=data["user"],
-                    password=data["password"],
-                    database=data["database"]
-                )
+            conn_str = (
+                f"Server={data['server']};"
+                f"Database={data['database']};"
+                f"Trusted_Connection=yes;"
+                f"Encrypt=no;"
+            )
+            db = self.db = connect(conn_str)
             print("Sucesso ao conectar ao banco!")
+            return db
         except Exception as err:
+            print(f"Erro ao se conectar ao banco: {err}")
             return f"Erro ao se conectar ao banco: {err}"
-        return db
 
     def ler_banco(self):
         cursor = self.db.cursor()
         try:
-            cursor.execute("SHOW TABLES")
-            tabelas = cursor.fetchall()
+            cursor.execute("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'")
+            temp = cursor.fetchall()
+            tabelas = []
+            for c in temp:tabelas.append(list(c))
             return tabelas
-        except:
-            print("Incapaz de realizar listagem da tabela!")
-            return
+        except Exception as err:
+            print(f"Incapaz de realizar listagem da tabela!\n{err}")
+            return f"Incapaz de realizar listagem da tabela!: {err}"
         finally:
             cursor.close()
 
@@ -45,7 +48,9 @@ class Dbcontroller:
         query = f"SELECT * FROM {tabela}"
         try:
             cursor.execute(query)
-            data = cursor.fetchall()
+            temp = cursor.fetchall()
+            data = []
+            for c in temp:data.append(list(c))
             return data
         except Exception as e:
             return f"Error: {e}"
@@ -68,7 +73,7 @@ class Dbcontroller:
 
     def remover_de_tabela(self, tabela, indentificador_nome, identificador):
         cursor = self.db.cursor()
-        sql = f"DELETE FROM {tabela} WHERE {indentificador_nome} = %s" # ou ? dependendo do banco
+        sql = f"DELETE FROM {tabela} WHERE {indentificador_nome} = ?"
 
         try:
             cursor.execute(sql, (identificador,))
@@ -85,7 +90,7 @@ class Dbcontroller:
 
         
         colunas = ", ".join(dados.keys())
-        placeholders = ", ".join(["%s"] * len(dados))
+        placeholders = ", ".join(["?"] * len(dados))
         valores = tuple(dados.values())
         
         query_insercao = f"INSERT INTO {tabela} ({colunas}) VALUES ({placeholders})"   
