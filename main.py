@@ -67,9 +67,9 @@ def alterar_cliente(id:int,coluna:str,dado):
 ###################################################################
 
 @app.get("/procurar_produto")
-def procurar_cliente(produto_id:int):
+def procurar_produto(produto_id:int):
     dado = ["produto_id",produto_id]
-    response = db.procurar_tabela(dado,tabelas[0])
+    response = db.procurar_tabela(dado,tabelas[1])
 
     response = {
         "message":list(response)
@@ -116,9 +116,9 @@ def alterar_produto(id:int,coluna:str,dado):
 ###################################################################
 
 @app.get("/procurar_categoria")
-def procurar_cliente(categoria_id:int):
+def procurar_categoria(categoria_id:int):
     dado = ["categoria_id",categoria_id]
-    response = db.procurar_tabela(dado,tabelas[0])
+    response = db.procurar_tabela(dado,tabelas[2])
 
     response = {
         "message":list(response)
@@ -158,9 +158,9 @@ def alterar_categoria(id:int,dado):
 ###################################################################
 
 @app.get("/procurar_pedidos")
-def procurar_cliente(pedidos_id:int):
+def procurar_pedidos(pedidos_id:int):
     dado = ["pedidos_id",pedidos_id]
-    response = db.procurar_tabela(dado,tabelas[0])
+    response = db.procurar_tabela(dado,tabelas[3])
 
     response = {
         "message":list(response)
