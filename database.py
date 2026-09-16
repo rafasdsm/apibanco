@@ -108,7 +108,6 @@ class Dbcontroller:
         valores = tuple(dados.values())
         
         query_insercao = f"INSERT INTO {tabela} ({colunas}) VALUES ({placeholders})"   
-        print(query_insercao)
         
         try:
             cursor.execute(query_insercao, valores)

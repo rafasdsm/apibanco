@@ -17,7 +17,9 @@ class Produtos(BaseModel):
     descricao: str
     preco: float
     disponivel: bool
-    imagem_url: str
+    imagem_nome: str
+    imagem_tipo: str
+    imagem_byte: bytes | None
     quantidade_disponivel: int
     tipo:str
 

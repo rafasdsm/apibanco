@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, Form, Response, UploadFile
 from database import Dbcontroller
 from modelos import Cliente, Produtos, Categorias, Pedidos
 from datetime import datetime
@@ -77,20 +77,55 @@ def procurar_cliente(produto_id:int):
     return response
 
 
-@app.post("/inserir_produto") #criar rota para inserir produto
-def inserir_produto(produto:Produtos):
-    dado = {
-        "categoria_id":produto.categoria_id,
-        "nome":produto.nome,
-        "descricao":produto.descricao,
-        "preco":produto.preco,
-        "disponivel":produto.disponivel,
-        "imagem_url":produto.imagem_url,
-        "quantidade_disponivel":produto.quantidade_disponivel,
-        "tipo":produto.tipo
-        }
-    response = db.inserir_tabela(tabelas[1],dado)
-    return {"message":response}
+@app.get('/produtos/{produto_id}/imagens')
+async def pegar_imagem_produto(produto_id:int):
+    produto = db.procurar_tabela(
+        ["produto_id",produto_id],
+        "produtos"
+    )
+
+    imagem = produto["imagem_byte"]
+    tipo_imagem = produto["imagem_tipo"]
+
+    return Response(
+        content=imagem,
+        media_type=tipo_imagem
+    )
+
+@app.post("/inserir_produto")
+async def criar_produto(
+    categoria_id:int = Form(...),
+    nome: str = Form(...),
+    descricao: str = Form(...),
+    preco: float = Form(...),
+    disponivel: bool = Form(...),
+    quantidade_disponivel: int = Form(...),
+    imagem: UploadFile = File(...)
+):
+    imagem_bytes = await imagem.read()
+
+    response = db.inserir_tabela('produtos',{
+        "categoria_id": categoria_id,
+        "disponivel":disponivel,
+        "nome": nome,
+        "descricao": descricao,
+        "preco": preco,
+        "quantidade_disponivel": quantidade_disponivel,
+        "imagem_byte": imagem_bytes,
+        "imagem_nome":imagem.filename,
+        "imagem_tipo": imagem.content_type
+    })
+
+    print(response)
+
+    return {
+        "nome": nome,
+        "descricao": descricao,
+        "preco": preco,
+        "quantidade_disponivel": quantidade_disponivel,
+        "nome_imagem": imagem.filename,
+        "tipo_imagem": imagem.content_type
+    }
 
 @app.delete("/remover_produto") #criar rota para remover produto
 def remover_produto(identificador_nome,identificador_):
