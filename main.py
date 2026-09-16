@@ -28,6 +28,16 @@ def read_tabela(tabela:str):
 #                                                                 #
 ###################################################################
 
+@app.get("/procurar_cliente")
+def procurar_cliente(cliente_id:int):
+    dado = ["cliente_id",cliente_id]
+    response = db.procurar_tabela(dado,tabelas[0])
+
+    response = {
+        "message":list(response)
+    }
+    return response
+
 @app.post("/inserir_cliente")
 def inserir_cliente(cliente:Cliente):
     dado = {
@@ -56,6 +66,17 @@ def alterar_cliente(id:int,coluna:str,dado):
 #                                                                 #
 ###################################################################
 
+@app.get("/procurar_produto")
+def procurar_cliente(produto_id:int):
+    dado = ["produto_id",produto_id]
+    response = db.procurar_tabela(dado,tabelas[0])
+
+    response = {
+        "message":list(response)
+    }
+    return response
+
+
 @app.post("/inserir_produto") #criar rota para inserir produto
 def inserir_produto(produto:Produtos):
     dado = {
@@ -65,7 +86,9 @@ def inserir_produto(produto:Produtos):
         "preco":produto.preco,
         "disponivel":produto.disponivel,
         "imagem_url":produto.imagem_url,
-        "quantidade_disponivel":produto.quantidade_disponivel}
+        "quantidade_disponivel":produto.quantidade_disponivel,
+        "tipo":produto.tipo
+        }
     response = db.inserir_tabela(tabelas[1],dado)
     return {"message":response}
 
@@ -82,7 +105,7 @@ def alterar_produto(id:int,coluna:str,dado):
             dado=dado,
             tabela=tabelas[1],
             id=id,
-            id_nome="produto_id"
+            id_nome="produto_id",
         )
         }
 
@@ -91,6 +114,18 @@ def alterar_produto(id:int,coluna:str,dado):
 #                            Categorias                           #
 #                                                                 #
 ###################################################################
+
+@app.get("/procurar_categoria")
+def procurar_cliente(categoria_id:int):
+    dado = ["categoria_id",categoria_id]
+    response = db.procurar_tabela(dado,tabelas[0])
+
+    response = {
+        "message":list(response)
+    }
+    return response
+
+
 
 @app.post("/inserir_categoria") #criar rota para inserir categoria
 def inserir_categoria(categoria:Categorias):
@@ -121,6 +156,18 @@ def alterar_categoria(id:int,dado):
 #                            Pedidos                              #
 #                                                                 #
 ###################################################################
+
+@app.get("/procurar_pedidos")
+def procurar_cliente(pedidos_id:int):
+    dado = ["pedidos_id",pedidos_id]
+    response = db.procurar_tabela(dado,tabelas[0])
+
+    response = {
+        "message":list(response)
+    }
+    return response
+
+
 
 @app.post("/inserir_pedido") #criar rota para inserir pedido
 def inserir_pedido(pedido:Pedidos):

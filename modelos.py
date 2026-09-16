@@ -19,6 +19,7 @@ class Produtos(BaseModel):
     disponivel: bool
     imagem_url: str
     quantidade_disponivel: int
+    tipo:str
 
 class Categorias(BaseModel):
     nome: str
