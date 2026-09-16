@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI
 from database import Dbcontroller
 from modelos import Cliente, Produtos, Categorias, Pedidos
 from datetime import datetime
@@ -77,32 +77,19 @@ def procurar_produto(produto_id:int):
     return response
 
 
-@app.post("/inserir_produtos")
-async def inserir_produtos(
-    categoria_id: int = Form(...),
-    nome: str = Form(...),
-    descricao: str = Form(...),
-    preco: float = Form(...),
-    disponivel: bool = Form(...),
-    quantidade_disponivel: int = Form(...),
-    imagem: UploadFile = File(...)
-):
-    dados_imagem = await imagem.read()
-
+@app.post("/inserir_produto") #criar rota para inserir produto
+def inserir_produto(produto:Produtos):
     dado = {
-        "categoria_id":categoria_id,
-        "descricao":descricao,
-        "disponivel":disponivel,
-        "preco":preco,
-        "quantidade_disponivel":quantidade_disponivel,
-        "imagem":dados_imagem,
-        "nome":nome
-}
-
-    response = db.inserir_tabela("produtos",dado)
-    return {
-        "message":f"{dado['nome']} Adicionado com sucesso!"
-    }
+        "categoria_id":produto.categoria_id,
+        "nome":produto.nome,
+        "descricao":produto.descricao,
+        "preco":produto.preco,
+        "disponivel":produto.disponivel,
+        "imagem_url":produto.imagem_url,
+        "quantidade_disponivel":produto.quantidade_disponivel,
+        }
+    response = db.inserir_tabela(tabelas[1],dado)
+    return {"message":response}
 
 @app.delete("/remover_produto") #criar rota para remover produto
 def remover_produto(identificador_nome,identificador_):
