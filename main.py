@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, Form
 from database import Dbcontroller
 from modelos import Cliente, Produtos, Categorias, Pedidos
 from datetime import datetime
@@ -67,9 +67,9 @@ def alterar_cliente(id:int,coluna:str,dado):
 ###################################################################
 
 @app.get("/procurar_produto")
-def procurar_cliente(produto_id:int):
+def procurar_produto(produto_id:int):
     dado = ["produto_id",produto_id]
-    response = db.procurar_tabela(dado,tabelas[0])
+    response = db.procurar_tabela(dado,tabelas[1])
 
     response = {
         "message":list(response)
@@ -77,20 +77,32 @@ def procurar_cliente(produto_id:int):
     return response
 
 
-@app.post("/inserir_produto") #criar rota para inserir produto
-def inserir_produto(produto:Produtos):
+@app.post("/inserir_produtos")
+async def inserir_produtos(
+    categoria_id: int = Form(...),
+    nome: str = Form(...),
+    descricao: str = Form(...),
+    preco: float = Form(...),
+    disponivel: bool = Form(...),
+    quantidade_disponivel: int = Form(...),
+    imagem: UploadFile = File(...)
+):
+    dados_imagem = await imagem.read()
+
     dado = {
-        "categoria_id":produto.categoria_id,
-        "nome":produto.nome,
-        "descricao":produto.descricao,
-        "preco":produto.preco,
-        "disponivel":produto.disponivel,
-        "imagem_url":produto.imagem_url,
-        "quantidade_disponivel":produto.quantidade_disponivel,
-        "tipo":produto.tipo
-        }
-    response = db.inserir_tabela(tabelas[1],dado)
-    return {"message":response}
+        "categoria_id":categoria_id,
+        "descricao":descricao,
+        "disponivel":disponivel,
+        "preco":preco,
+        "quantidade_disponivel":quantidade_disponivel,
+        "imagem":dados_imagem,
+        "nome":nome
+}
+
+    response = db.inserir_tabela("produtos",dado)
+    return {
+        "message":f"{dado['nome']} Adicionado com sucesso!"
+    }
 
 @app.delete("/remover_produto") #criar rota para remover produto
 def remover_produto(identificador_nome,identificador_):
@@ -116,9 +128,9 @@ def alterar_produto(id:int,coluna:str,dado):
 ###################################################################
 
 @app.get("/procurar_categoria")
-def procurar_cliente(categoria_id:int):
+def procurar_categoria(categoria_id:int):
     dado = ["categoria_id",categoria_id]
-    response = db.procurar_tabela(dado,tabelas[0])
+    response = db.procurar_tabela(dado,tabelas[2])
 
     response = {
         "message":list(response)
@@ -158,9 +170,9 @@ def alterar_categoria(id:int,dado):
 ###################################################################
 
 @app.get("/procurar_pedidos")
-def procurar_cliente(pedidos_id:int):
+def procurar_pedidos(pedidos_id:int):
     dado = ["pedidos_id",pedidos_id]
-    response = db.procurar_tabela(dado,tabelas[0])
+    response = db.procurar_tabela(dado,tabelas[3])
 
     response = {
         "message":list(response)

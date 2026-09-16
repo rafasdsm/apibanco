@@ -105,6 +105,7 @@ class Dbcontroller:
         
         colunas = ", ".join(dados.keys())
         placeholders = ", ".join(["?"] * len(dados))
+        print(dados)
         valores = tuple(dados.values())
         
         query_insercao = f"INSERT INTO {tabela} ({colunas}) VALUES ({placeholders})"   

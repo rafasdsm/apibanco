@@ -25,3 +25,4 @@ def gerar_clientes_tabela(quant:int):
     return print("Dados inseridos com sucesso!")
 
 
+
