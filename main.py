@@ -61,8 +61,9 @@ def inserir_cliente(cliente:Cliente):
     return {"message":response}
 
 @app.delete("/remover_cliente")
-def remover_cliente(identificador_nome,identificador_):
-    response = db.remover_de_tabela(tabelas[0],indentificador_nome=identificador_nome,identificador=identificador_)
+def remover_cliente(id:int):
+    identificador_nome = "cliente_id"
+    response = db.remover_de_tabela(tabelas[0],indentificador_nome=identificador_nome,identificador=id)
     return {"message":response}
 
 @app.patch("/alterar_cliente")
@@ -180,8 +181,9 @@ def inserir_categoria(categoria:Categorias):
     return {"message":response}
 
 @app.delete("/remover_categoria") #criar rota para remover categoria
-def remover_categoria(identificador_nome,identificador_):
-    response = db.remover_de_tabela(tabelas[2],indentificador_nome=identificador_nome,identificador=identificador_)
+def remover_categoria(id:int):
+    identificador_nome = "categoria_id"
+    response = db.remover_de_tabela(tabelas[2],indentificador_nome=identificador_nome,identificador=id)
     return {"message":response}
 
 @app.patch("/alterar_categoria")
@@ -225,8 +227,9 @@ def inserir_pedido(pedido:Pedidos):
     return {"message":response}
 
 @app.delete("/remover_pedido") #criar rota para remover pedido
-def remover_pedido(identificador_nome,identificador_):  
-    response = db.remover_de_tabela(tabelas[3],indentificador_nome=identificador_nome,identificador=identificador_)
+def remover_pedido(id:int):  
+    identificador_nome = 'pedido_id'
+    response = db.remover_de_tabela(tabelas[3],indentificador_nome=identificador_nome,identificador=id)
     return {"message":response}
 
 @app.patch("/alterar_pedido")
