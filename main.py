@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, Form, Response, UploadFile
 from database import Dbcontroller
 from modelos import Cliente, Produtos, Categorias, Pedidos
 from datetime import datetime
@@ -18,9 +18,19 @@ tabelas = [
 def read_root():
     return {"message":db.ler_banco()}
 
-@app.get('/ler_tabela')
+@app.get('/ler_tabela/{tabela}')
 def read_tabela(tabela:str):
-    return {"message":db.ler_tabela(tabela)}
+    if tabela == "produtos":
+        temp = list(db.ler_tabela(tabela))
+        data = []
+        for c in temp:
+            c.pop(8)
+            c.insert(8,f"http://127.0.0.1:8000/produtos/{c[0]}/imagens")
+            data.append(c)
+
+        return {"message":data}
+    else:
+        return {"message":db.ler_tabela(tabela)}
 
 ###################################################################
 #                                                                 #
@@ -28,7 +38,7 @@ def read_tabela(tabela:str):
 #                                                                 #
 ###################################################################
 
-@app.get("/procurar_cliente")
+@app.get("/procurar_cliente/{cliente_id}")
 def procurar_cliente(cliente_id:int):
     dado = ["cliente_id",cliente_id]
     response = db.procurar_tabela(dado,tabelas[0])
@@ -66,34 +76,70 @@ def alterar_cliente(id:int,coluna:str,dado):
 #                                                                 #
 ###################################################################
 
-@app.get("/procurar_produto")
-def procurar_produto(produto_id:int):
+@app.get("/procurar_produto/{produto_id}")
+def procurar_cliente(produto_id:int):
     dado = ["produto_id",produto_id]
-    response = db.procurar_tabela(dado,tabelas[1])
-
-    response = {
-        "message":list(response)
+    response = list(db.procurar_tabela(dado,tabelas[1]))
+    response.pop(8)
+    response.insert(8,f"http://127.0.0.1:8000/produtos/{produto_id}/imagens")
+    return {
+        "message":response
     }
-    return response
 
 
-@app.post("/inserir_produto") #criar rota para inserir produto
-def inserir_produto(produto:Produtos):
-    dado = {
-        "categoria_id":produto.categoria_id,
-        "nome":produto.nome,
-        "descricao":produto.descricao,
-        "preco":produto.preco,
-        "disponivel":produto.disponivel,
-        "imagem_url":produto.imagem_url,
-        "quantidade_disponivel":produto.quantidade_disponivel,
-        }
-    response = db.inserir_tabela(tabelas[1],dado)
-    return {"message":response}
+@app.get('/produtos/{produto_id}/imagens')
+async def pegar_imagem_produto(produto_id:int):
+    produto = db.procurar_tabela(
+        ["produto_id",produto_id],
+        "produtos"
+    )
+
+    imagem = produto["imagem_byte"]
+    tipo_imagem = produto["imagem_tipo"]
+
+    return Response(
+        content=imagem,
+        media_type=tipo_imagem
+    )
+
+@app.post("/inserir_produto")
+async def criar_produto(
+    categoria_id:int = Form(...),
+    nome: str = Form(...),
+    descricao: str = Form(...),
+    preco: float = Form(...),
+    disponivel: bool = Form(...),
+    quantidade_disponivel: int = Form(...),
+    imagem: UploadFile = File(...)
+):
+    imagem_bytes = await imagem.read()
+
+    response = db.inserir_tabela('produtos',{
+        "categoria_id": categoria_id,
+        "disponivel":disponivel,
+        "nome": nome,
+        "descricao": descricao,
+        "preco": preco,
+        "quantidade_disponivel": quantidade_disponivel,
+        "imagem_byte": imagem_bytes,
+        "imagem_nome":imagem.filename,
+        "imagem_tipo": imagem.content_type
+    })
+
+    print(response)
+
+    return {
+        "nome": nome,
+        "descricao": descricao,
+        "preco": preco,
+        "quantidade_disponivel": quantidade_disponivel,
+        "nome_imagem": imagem.filename,
+        "tipo_imagem": imagem.content_type
+    }
 
 @app.delete("/remover_produto") #criar rota para remover produto
-def remover_produto(identificador_nome,identificador_):
-    response = db.remover_de_tabela(tabelas[1],indentificador_nome=identificador_nome,identificador=identificador_)
+def remover_produto(id:int):
+    response = db.remover_de_tabela(tabelas[1],indentificador_nome="produto_id",identificador=id)
     return {"message":response}
 
 @app.patch("/alterar_produto")
@@ -114,8 +160,8 @@ def alterar_produto(id:int,coluna:str,dado):
 #                                                                 #
 ###################################################################
 
-@app.get("/procurar_categoria")
-def procurar_categoria(categoria_id:int):
+@app.get("/procurar_categoria/{categoria_id}")
+def procurar_cliente(categoria_id:int):
     dado = ["categoria_id",categoria_id]
     response = db.procurar_tabela(dado,tabelas[2])
 
@@ -156,8 +202,8 @@ def alterar_categoria(id:int,dado):
 #                                                                 #
 ###################################################################
 
-@app.get("/procurar_pedidos")
-def procurar_pedidos(pedidos_id:int):
+@app.get("/procurar_pedidos/{pedido_id}")
+def procurar_cliente(pedidos_id:int):
     dado = ["pedidos_id",pedidos_id]
     response = db.procurar_tabela(dado,tabelas[3])
 
