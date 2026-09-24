@@ -21,7 +21,6 @@ class Produtos(BaseModel):
     imagem_tipo: str
     imagem_byte: bytes | None
     quantidade_disponivel: int
-    tipo:str
 
 class Categorias(BaseModel):
     nome: str
