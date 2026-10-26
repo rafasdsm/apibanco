@@ -91,10 +91,6 @@ if not "%RESULT%"=="0" (
     pause & exit /b %RESULT%
 )
 
-echo.
-echo [OK] Banco "site" criado/atualizado com sucesso em %SERVIDOR%.
-pause
-exit /b 0
 
 ::SQL::IF DB_ID(N'site') IS NULL
 ::SQL::    CREATE DATABASE [site] COLLATE Latin1_General_CI_AS;
