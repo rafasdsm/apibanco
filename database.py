@@ -43,28 +43,12 @@ class Dbcontroller:
         finally:
             cursor.close()
 
-    def procurar_tabela(self,identificador:list,tabela:str):
-        cursor = self.db.cursor()
-        query = f"select * from site.dbo.{tabela} where {identificador[0]} = {identificador[1]};"
-        try:
-            cursor.execute(query)
-            response = cursor.fetchall()[0]
-            return response
-        except Exception as e:
-            response = f"Error: {e}"
-            return response
-        finally:
-            cursor.close()
-
-
     def ler_tabela(self,tabela:str):
         cursor = self.db.cursor()
         query = f"SELECT * FROM {tabela}"
         try:
             cursor.execute(query)
-            temp = cursor.fetchall()
-            data = []
-            for c in temp:data.append(list(c))
+            data = cursor.fetchall()
             return data
         except Exception as e:
             return f"Error: {e}"
