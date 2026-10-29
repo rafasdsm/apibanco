@@ -2,7 +2,7 @@ from mssql_python import connect
 
 class Dbcontroller:
     def __init__(self):
-        self.db = self.connect()
+        self.db = self.connect_database()
 
     def open_text(self):
         data = {}
@@ -13,21 +13,26 @@ class Dbcontroller:
 
         return data
 
-    def connect(self):
+    
+    def connect_database(self):
         try:
             data = self.open_text()
+
             conn_str = (
                 f"Server={data['server']};"
                 f"Database={data['database']};"
                 f"Trusted_Connection=yes;"
                 f"Encrypt=no;"
             )
-            db = self.db = connect(conn_str)
+
+            db = connect(conn_str)
             print("Sucesso ao conectar ao banco!")
             return db
+
         except Exception as err:
             print(f"Erro ao se conectar ao banco: {err}")
-            return f"Erro ao se conectar ao banco: {err}"
+            raise
+
 
     def ler_banco(self):
         cursor = self.db.cursor()
@@ -84,6 +89,7 @@ class Dbcontroller:
                 return f"Erro ao limpar a tabela {tabela}| Erro: {e}"
             finally:
                 cursor.close()
+                
 
     def remover_de_tabela(self, tabela, indentificador_nome, identificador):
         cursor = self.db.cursor()
@@ -134,3 +140,4 @@ class Dbcontroller:
 
         finally:
             cursor.close()
+        

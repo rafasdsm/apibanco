@@ -1,234 +1,170 @@
+
 @echo off
 setlocal
-chcp 65001 >nul
+chcp 65001 > nul
+title Inicializador do Projeto
+
 cd /d "%~dp0"
 
-rem ============================================================
-rem  CONFIGURACOES (ajuste aqui se necessario)
-rem ============================================================
-set "SQL_SERVER=.\SQLEXPRESS"
-set "DB_NAME=site"
-set "VENV_DIR=%~dp0venv"
-set "REQ_FILE=requisitos.txt"
-set "SQL_FILE=%TEMP%\criar_tabelas_site.sql"
+echo ========================================
+echo       INICIALIZADOR DO PROJETO
+echo ========================================
+echo.
 
-rem 1 = o script cria as tabelas logo apos criar o banco
-rem 0 = cria so o banco vazio (use se o generate_data.py ja cria as tabelas)
-set "CRIAR_TABELAS=1"
-
-rem 1 = run.py abre em outra janela (use se for um servidor que nao termina)
-rem 0 = espera o run.py terminar antes de abrir o interface.exe
-set "RUN_EM_NOVA_JANELA=1"
-
-set "DB_CRIADO=0"
-
-echo ============================================================
-echo  [1/6] Verificando banco de dados "%DB_NAME%"
-echo ============================================================
-where sqlcmd >nul 2>&1
+:: 1. Verificar Python
+where python > nul 2>&1
 if errorlevel 1 (
-    echo ERRO: sqlcmd nao encontrado. Instale o "SQL Server Command Line Utilities".
-    goto :erro
+    echo [ERRO] Python nao encontrado no PATH.
+    pause
+    exit /b 1
 )
 
-set "DB_EXISTE="
-for /f "usebackq delims=" %%R in (`sqlcmd -S "%SQL_SERVER%" -E -C -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.databases WHERE name = N'%DB_NAME%'" 2^>^&1`) do set "DB_EXISTE=%%R"
-
-if "%DB_EXISTE%"=="1" (
-    echo Banco "%DB_NAME%" ja existe. Criacao ignorada.
-    goto :banco_ok
-)
-if not "%DB_EXISTE%"=="0" (
-    echo ERRO: nao foi possivel consultar o SQL Server em "%SQL_SERVER%".
-    echo Resposta: %DB_EXISTE%
-    goto :erro
+:: 2. Criar ambiente virtual, se necessario
+if not exist "venv\Scripts\python.exe" (
+    echo [INFO] Criando ambiente virtual...
+    python -m venv venv
+    if errorlevel 1 (
+        echo [ERRO] Falha ao criar venv.
+        pause
+        exit /b 1
+    )
 )
 
-echo Banco nao encontrado. Criando "%DB_NAME%"...
-sqlcmd -S "%SQL_SERVER%" -E -C -b -Q "CREATE DATABASE [%DB_NAME%]"
+:: 3. Ativar ambiente virtual
+call "venv\Scripts\activate.bat"
 if errorlevel 1 (
-    echo ERRO ao criar o banco de dados.
-    goto :erro
-)
-set "DB_CRIADO=1"
-echo Banco "%DB_NAME%" criado com sucesso.
-
-if "%CRIAR_TABELAS%"=="1" (
-    echo Criando tabelas...
-    call :gerar_sql
-    sqlcmd -S "%SQL_SERVER%" -E -C -b -d "%DB_NAME%" -i "%SQL_FILE%"
-    if errorlevel 1 (
-        del "%SQL_FILE%" >nul 2>&1
-        echo ERRO ao criar as tabelas.
-        goto :erro
-    )
-    del "%SQL_FILE%" >nul 2>&1
-    echo Tabelas criadas com sucesso.
+    echo [ERRO] Falha ao ativar venv.
+    pause
+    exit /b 1
 )
 
-:banco_ok
-
-echo.
-echo ============================================================
-echo  [2/6] Criando ambiente virtual
-echo ============================================================
-if exist "%VENV_DIR%\Scripts\activate.bat" (
-    echo Ambiente virtual ja existe.
-) else (
-    set "PY_CMD="
-    where py >nul 2>&1 && set "PY_CMD=py -3"
-    if not defined PY_CMD (
-        where python >nul 2>&1 && set "PY_CMD=python"
-    )
-    if not defined PY_CMD (
-        echo ERRO: Python nao encontrado no PATH.
-        goto :erro
-    )
-    %PY_CMD% -m venv "%VENV_DIR%"
-    if errorlevel 1 (
-        echo ERRO ao criar o ambiente virtual.
-        goto :erro
-    )
+:: 4. Instalar dependencias
+if not exist "requisitos.txt" (
+    echo [ERRO] requisitos.txt nao encontrado.
+    pause
+    exit /b 1
 )
 
-echo.
-echo ============================================================
-echo  [3/6] Ativando ambiente virtual
-echo ============================================================
-call "%VENV_DIR%\Scripts\activate.bat"
+echo [INFO] Instalando dependencias...
+python -m pip install -r requisitos.txt
 if errorlevel 1 (
-    echo ERRO ao ativar o ambiente virtual.
-    goto :erro
+    echo [ERRO] Falha ao instalar dependencias.
+    pause
+    exit /b 1
 )
 
-echo.
-echo ============================================================
-echo  [4/6] Instalando requisitos (%REQ_FILE%)
-echo ============================================================
-if not exist "%REQ_FILE%" (
-    echo ERRO: %REQ_FILE% nao encontrado em %~dp0
-    goto :erro
+:: 5. Ler configuracao do banco.txt
+if not exist "banco.txt" (
+    echo [ERRO] banco.txt nao encontrado.
+    pause
+    exit /b 1
 )
-python -m pip install --upgrade pip
-python -m pip install -r "%REQ_FILE%"
+
+set "SQL_SERVER="
+set "DB_NAME="
+
+for /f "usebackq tokens=1,* delims==" %%A in ("banco.txt") do (
+    if /i "%%A"=="server" set "SQL_SERVER=%%B"
+    if /i "%%A"=="database" set "DB_NAME=%%B"
+)
+
+if not defined SQL_SERVER (
+    echo [ERRO] Chave server nao encontrada em banco.txt.
+    pause
+    exit /b 1
+)
+
+if not defined DB_NAME (
+    echo [ERRO] Chave database nao encontrada em banco.txt.
+    pause
+    exit /b 1
+)
+
+:: Ajuste para a instancia SQLEXPRESS caso o arquivo
+:: ainda esteja configurado para localhost.
+if /i "%SQL_SERVER%"=="localhost" set "SQL_SERVER=.\SQLEXPRESS"
+
+echo.
+echo [INFO] Servidor: %SQL_SERVER%
+echo [INFO] Banco: %DB_NAME%
+echo [INFO] Verificando conexao...
+
+where sqlcmd > nul 2>&1
 if errorlevel 1 (
-    echo ERRO ao instalar os requisitos.
-    goto :erro
+    echo [ERRO] sqlcmd nao encontrado no PATH.
+    pause
+    exit /b 1
+)
+
+:: 6. Consultar existencia do banco conectando em master
+set "DB_RESULT=%TEMP%\db_check_%RANDOM%.txt"
+set "DB_ERROR=%TEMP%\db_error_%RANDOM%.txt"
+
+sqlcmd -S "%SQL_SERVER%" -E -C -b -d master -h -1 -W ^
+    -Q "SET NOCOUNT ON; SELECT CASE WHEN DB_ID(N'%DB_NAME%') IS NOT NULL THEN 1 ELSE 0 END;" ^
+    -o "%DB_RESULT%" 2> "%DB_ERROR%"
+
+if errorlevel 1 (
+    echo.
+    echo [ERRO] Nao foi possivel conectar ao SQL Server.
+    type "%DB_ERROR%"
+    del "%DB_RESULT%" "%DB_ERROR%" > nul 2>&1
+    pause
+    exit /b 1
+)
+
+set "DB_EXISTS="
+set /p DB_EXISTS=<"%DB_RESULT%"
+
+del "%DB_RESULT%" "%DB_ERROR%" > nul 2>&1
+
+:: 7. Criar banco e gerar dados apenas se nao existir
+if "%DB_EXISTS%"=="1" (
+    echo [INFO] Banco %DB_NAME% ja existe.
+    echo [INFO] Pulando criacao e geracao de dados.
+) else (
+    echo [INFO] Banco inexistente.
+    echo [INFO] Executando site.sql...
+
+    if not exist "site.sql" (
+        echo [ERRO] site.sql nao encontrado.
+        pause
+        exit /b 1
+    )
+
+    sqlcmd -S "%SQL_SERVER%" -E -C -b -d master -i "site.sql"
+    if errorlevel 1 (
+        echo [ERRO] Falha ao executar site.sql.
+        pause
+        exit /b 1
+    )
+
+    echo [INFO] Gerando dados iniciais...
+    python "generate_data.py"
+    if errorlevel 1 (
+        echo [ERRO] Falha ao executar generate_data.py.
+        pause
+        exit /b 1
+    )
+)
+
+:: 8. Iniciar aplicacao
+if not exist "run.py" (
+    echo [ERRO] run.py nao encontrado.
+    pause
+    exit /b 1
 )
 
 echo.
-echo ============================================================
-echo  [5/6] Executando scripts Python
-echo ============================================================
-if "%DB_CRIADO%"=="1" (
-    echo Banco recem-criado: executando generate_data.py...
-    python generate_data.py
-    if errorlevel 1 (
-        echo ERRO ao executar generate_data.py.
-        goto :erro
-    )
-) else (
-    echo Banco ja existia: generate_data.py nao sera executado.
+echo [INFO] Iniciando aplicacao...
+echo ========================================
+
+python "run.py"
+
+if errorlevel 1 (
+    echo [ERRO] A aplicacao foi encerrada com erro.
+    pause
+    exit /b 1
 )
 
-echo Executando run.py...
-if "%RUN_EM_NOVA_JANELA%"=="1" (
-    start "run.py" cmd /k ""%VENV_DIR%\Scripts\python.exe" run.py"
-    timeout /t 5 /nobreak >nul
-) else (
-    python run.py
-    if errorlevel 1 (
-        echo ERRO ao executar run.py.
-        goto :erro
-    )
-)
-
-echo.
-echo ============================================================
-echo  [6/6] Abrindo interface.exe
-echo ============================================================
-if exist "%~dp0interface.exe" (
-    start "" "%~dp0interface.exe"
-) else (
-    start "" interface.exe
-    if errorlevel 1 (
-        echo ERRO: interface.exe nao encontrado.
-        goto :erro
-    )
-)
-
-echo.
-echo Tudo pronto.
 endlocal
-exit /b 0
-
-:erro
-echo.
-echo O processo foi interrompido por um erro.
-pause
-endlocal
-exit /b 1
-
-rem ============================================================
-rem  Gera o arquivo SQL com a estrutura das tabelas
-rem ============================================================
-:gerar_sql
->"%SQL_FILE%" echo IF OBJECT_ID(N'dbo.admins','U') IS NULL
->>"%SQL_FILE%" echo CREATE TABLE dbo.admins (
->>"%SQL_FILE%" echo     admin_id INT IDENTITY(1,1) PRIMARY KEY,
->>"%SQL_FILE%" echo     nome VARCHAR(100) NOT NULL,
->>"%SQL_FILE%" echo     email VARCHAR(150) NOT NULL UNIQUE,
->>"%SQL_FILE%" echo     senha VARCHAR(255) NOT NULL
->>"%SQL_FILE%" echo );
->>"%SQL_FILE%" echo IF OBJECT_ID(N'dbo.categorias','U') IS NULL
->>"%SQL_FILE%" echo CREATE TABLE dbo.categorias (
->>"%SQL_FILE%" echo     categoria_id INT IDENTITY(1,1) PRIMARY KEY,
->>"%SQL_FILE%" echo     nome VARCHAR(100) NOT NULL
->>"%SQL_FILE%" echo );
->>"%SQL_FILE%" echo IF OBJECT_ID(N'dbo.clientes','U') IS NULL
->>"%SQL_FILE%" echo CREATE TABLE dbo.clientes (
->>"%SQL_FILE%" echo     cliente_id INT IDENTITY(1,1) PRIMARY KEY,
->>"%SQL_FILE%" echo     nome VARCHAR(150) NOT NULL,
->>"%SQL_FILE%" echo     email VARCHAR(150) NOT NULL UNIQUE,
->>"%SQL_FILE%" echo     senha VARCHAR(255) NOT NULL,
->>"%SQL_FILE%" echo     telefone VARCHAR(30) NULL,
->>"%SQL_FILE%" echo     endereco VARCHAR(255) NULL,
->>"%SQL_FILE%" echo     cpf VARCHAR(14) NOT NULL UNIQUE
->>"%SQL_FILE%" echo );
->>"%SQL_FILE%" echo IF OBJECT_ID(N'dbo.produtos','U') IS NULL
->>"%SQL_FILE%" echo CREATE TABLE dbo.produtos (
->>"%SQL_FILE%" echo     produto_id INT IDENTITY(1,1) PRIMARY KEY,
->>"%SQL_FILE%" echo     categoria_id INT NULL,
->>"%SQL_FILE%" echo     nome VARCHAR(150) NOT NULL,
->>"%SQL_FILE%" echo     descricao VARCHAR(MAX) NULL,
->>"%SQL_FILE%" echo     preco DECIMAL(10,2) NOT NULL,
->>"%SQL_FILE%" echo     disponivel BIT NOT NULL DEFAULT 1,
->>"%SQL_FILE%" echo     quantidade_disponivel INT NOT NULL DEFAULT 0,
->>"%SQL_FILE%" echo     imagem_byte VARBINARY(MAX) NULL,
->>"%SQL_FILE%" echo     imagem_nome VARCHAR(255) NULL,
->>"%SQL_FILE%" echo     imagem_tipo VARCHAR(100) NULL,
->>"%SQL_FILE%" echo     CONSTRAINT FK_produtos_categoria FOREIGN KEY (categoria_id) REFERENCES dbo.categorias(categoria_id)
->>"%SQL_FILE%" echo );
->>"%SQL_FILE%" echo IF OBJECT_ID(N'dbo.pedidos','U') IS NULL
->>"%SQL_FILE%" echo CREATE TABLE dbo.pedidos (
->>"%SQL_FILE%" echo     pedido_id INT IDENTITY(1,1) PRIMARY KEY,
->>"%SQL_FILE%" echo     cliente_id INT NOT NULL,
->>"%SQL_FILE%" echo     data_pedido DATETIME NOT NULL DEFAULT GETDATE(),
->>"%SQL_FILE%" echo     status VARCHAR(30) NOT NULL DEFAULT 'pendente',
->>"%SQL_FILE%" echo     valor_total DECIMAL(10,2) NOT NULL,
->>"%SQL_FILE%" echo     endereco_entrega VARCHAR(255) NULL,
->>"%SQL_FILE%" echo     forma_pagamento VARCHAR(50) NULL,
->>"%SQL_FILE%" echo     status_pagamento VARCHAR(30) NOT NULL DEFAULT 'pendente',
->>"%SQL_FILE%" echo     CONSTRAINT FK_pedidos_cliente FOREIGN KEY (cliente_id) REFERENCES dbo.clientes(cliente_id)
->>"%SQL_FILE%" echo );
->>"%SQL_FILE%" echo IF OBJECT_ID(N'dbo.itenspedido','U') IS NULL
->>"%SQL_FILE%" echo CREATE TABLE dbo.itenspedido (
->>"%SQL_FILE%" echo     item_id INT IDENTITY(1,1) PRIMARY KEY,
->>"%SQL_FILE%" echo     pedido_id INT NOT NULL,
->>"%SQL_FILE%" echo     produto_id INT NOT NULL,
->>"%SQL_FILE%" echo     quantidade INT NOT NULL,
->>"%SQL_FILE%" echo     preco_unitario DECIMAL(10,2) NOT NULL,
->>"%SQL_FILE%" echo     CONSTRAINT FK_itenspedido_pedido FOREIGN KEY (pedido_id) REFERENCES dbo.pedidos(pedido_id),
->>"%SQL_FILE%" echo     CONSTRAINT FK_itenspedido_produto FOREIGN KEY (produto_id) REFERENCES dbo.produtos(produto_id)
->>"%SQL_FILE%" echo );
-exit /b 0
