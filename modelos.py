@@ -29,4 +29,18 @@ class Pedidos(BaseModel):
     cliente_id: int
     data_pedido: Optional[datetime] = None
     endereco_entrega: str
+    status:str
+    valortotal:float
     forma_pagamento: str
+    
+
+class itenspedido(BaseModel):
+    pedido_id: int
+    produto_id: int
+    quantidade: int
+    preco_unitario: float
+
+class admins(BaseModel):
+    nome: str
+    email:str
+    senha:str

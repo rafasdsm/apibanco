@@ -1,6 +1,6 @@
 from fastapi import FastAPI, File, Form, Response, UploadFile
 from database import Dbcontroller
-from modelos import Cliente, Produtos, Categorias, Pedidos
+from modelos import *
 from datetime import datetime
 
 
@@ -202,23 +202,13 @@ def alterar_categoria(id:int,dado):
 #                                                                 #
 ###################################################################
 
-@app.get("/procurar_pedidos/{pedido_id}")
-def procurar_cliente(pedidos_id:int):
-    dado = ["pedidos_id",pedidos_id]
-    response = db.procurar_tabela(dado,tabelas[3])
-
-    response = {
-        "message":list(response)
-    }
-    return response
-
-
-
 @app.post("/inserir_pedido") #criar rota para inserir pedido
 def inserir_pedido(pedido:Pedidos):
     dado = {
         "cliente_id":pedido.cliente_id,
         "data_pedido":pedido.data_pedido or datetime.now(),
+        "status":pedido.status or "pendente",
+        "valor_total":pedido.valortotal,
         "endereco_entrega":pedido.endereco_entrega,
         "forma_pagamento":pedido.forma_pagamento}
     response = db.inserir_tabela(tabelas[3],dado)
@@ -241,5 +231,54 @@ def alterar_pedido(id:int,coluna:str,dado):
                 id_nome="pedido_id"
             )
             }
+@app.post("/inserir_item_pedido") #criar rota para inserir item pedido
+def inserir_item_pedido(item:itenspedido):
+    dado = {
+        "pedido_id":item.pedido_id,
+        "produto_id":item.produto_id,
+        "quantidade":item.quantidade,
+        "preco_unitario":item.preco_unitario}
+    response = db.inserir_tabela("itenspedido",dado)
+    return {"message":response}
 
+@app.delete("/remover_item_pedido") #criar rota para remover item pedido
+def remover_item_pedido(identificador_nome,identificador_):
+    response = db.remover_de_tabela("itenspedido",indentificador_nome=identificador_nome,identificador=identificador_)
+    return {"message":response}
 
+@app.patch("/alterar_item_pedido")
+def alterar_item_pedido(id:int,coluna:str,dado):
+    return{
+            "message":db.atualizar_tabela(
+                coluna=coluna,
+                dado=dado,
+                tabela="itenspedido",
+                id=id,
+                id_nome="item_pedido_id"
+            )
+            }
+
+@app.post("/inserir_admin") #criar rota para inserir admin
+def inserir_admin(admin:admins):
+    dado = {
+        "nome":admin.nome,
+        "email":admin.email,
+        "senha":admin.senha}
+    response = db.inserir_tabela("admins",dado)
+    return {"message":response}
+@app.delete("/remover_admin") #criar rota para remover admin
+def remover_admin(identificador_nome,identificador_):
+    response = db.remover_de_tabela("admins",indentificador_nome=identificador_nome,identificador=identificador_)
+    return {"message":response}
+
+@app.patch("/alterar_admin")
+def alterar_admin(id:int,coluna:str,dado):
+    return{
+            "message":db.atualizar_tabela(
+                coluna=coluna,
+                dado=dado,
+                tabela="admins",
+                id=id,
+                id_nome="admin_id"
+            )
+            }
