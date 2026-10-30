@@ -11,18 +11,18 @@ echo       INICIALIZADOR DO PROJETO
 echo ========================================
 echo.
 
-:: 1. Verificar Python
-where python > nul 2>&1
+:: 1. Verificar Python3
+where python3 > nul 2>&1
 if errorlevel 1 (
-    echo [ERRO] Python nao encontrado no PATH.
+    echo [ERRO] Python3 nao encontrado no PATH.
     pause
     exit /b 1
 )
 
 :: 2. Criar ambiente virtual, se necessario
-if not exist "venv\Scripts\python.exe" (
+if not exist "venv\Scripts\python3.exe" (
     echo [INFO] Criando ambiente virtual...
-    python -m venv venv
+    python3 -m venv venv
     if errorlevel 1 (
         echo [ERRO] Falha ao criar venv.
         pause
@@ -46,7 +46,7 @@ if not exist "requisitos.txt" (
 )
 
 echo [INFO] Instalando dependencias...
-python -m pip install -r requisitos.txt
+python3 -m pip install -r requisitos.txt
 if errorlevel 1 (
     echo [ERRO] Falha ao instalar dependencias.
     pause
@@ -140,7 +140,7 @@ if "%DB_EXISTS%"=="1" (
     )
 
     echo [INFO] Gerando dados iniciais...
-    python "generate_data.py"
+    python3 "generate_data.py"
     if errorlevel 1 (
         echo [ERRO] Falha ao executar generate_data.py.
         pause
@@ -159,7 +159,8 @@ echo.
 echo [INFO] Iniciando aplicacao...
 echo ========================================
 
-python "run.py"
+start INTERFACE\loja_app.exe
+python3 "run.py"
 
 if errorlevel 1 (
     echo [ERRO] A aplicacao foi encerrada com erro.
